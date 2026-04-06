@@ -1,0 +1,8 @@
+#!/bin/bash
+set -euxo pipefail
+
+echo "DB_ENDPOINT=${db_endpoint}" >> /etc/environment
+echo "DB_NAME=${db_name}" >> /etc/environment
+
+# Placeholder startup command
+# Replace with real service bootstrap, e.g. pulling container image and starting admin app on port 8081.
