@@ -1,0 +1,178 @@
+name: Infrastructure and Application CI/CD
+
+on:
+  pull_request:
+    branches: ["main"]
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+env:
+  TF_WORKING_DIR: infra/terraform
+  AWS_REGION: us-east-1
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform_ci:
+    name: Terraform CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Fmt
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform validate
+
+  terraform_plan:
+    name: Terraform Plan (PR)
+    if: github.event_name == 'pull_request'
+    needs: terraform_ci
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform plan -input=false -out=tfplan
+
+  terraform_apply:
+    name: Terraform Apply (main)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: terraform_ci
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform apply -auto-approve -input=false
+
+  deploy_frontends:
+    name: Deploy Frontend Apps
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: terraform_apply
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [client, admin]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Build frontend
+        run: |
+          if [ -d "frontend/${{ matrix.app }}" ]; then
+            cd frontend/${{ matrix.app }}
+            npm ci
+            npm run build
+          else
+            echo "frontend/${{ matrix.app }} not found; skipping build"
+          fi
+
+      - name: Upload client artifacts to S3
+        if: matrix.app == 'client'
+        run: |
+          if [ -d "frontend/client/dist" ]; then
+            aws s3 sync frontend/client/dist s3://${{ secrets.S3_BUCKET_CLIENT }} --delete
+          else
+            echo "No dist folder for client; skipping upload"
+          fi
+
+      - name: Upload admin artifacts to S3
+        if: matrix.app == 'admin'
+        run: |
+          if [ -d "frontend/admin/dist" ]; then
+            aws s3 sync frontend/admin/dist s3://${{ secrets.S3_BUCKET_ADMIN }} --delete
+          else
+            echo "No dist folder for admin; skipping upload"
+          fi
+
+      - name: Invalidate CloudFront cache
+        run: |
+          if [ "${{ matrix.app }}" = "client" ]; then
+            DIST_ID="${{ secrets.CF_DISTRIBUTION_CLIENT_ID }}"
+          else
+            DIST_ID="${{ secrets.CF_DISTRIBUTION_ADMIN_ID }}"
+          fi
+          if [ -n "$DIST_ID" ]; then
+            aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths "/*"
+          else
+            echo "CloudFront distribution ID not configured for ${{ matrix.app }}"
+          fi
+
+  deploy_backend:
+    name: Deploy Backend Services
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: terraform_apply
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Trigger instance refresh for API ASG
+        run: |
+          if [ -n "${{ secrets.API_ASG_NAME }}" ]; then
+            aws autoscaling start-instance-refresh --auto-scaling-group-name "${{ secrets.API_ASG_NAME }}"
+          else
+            echo "API_ASG_NAME secret not set"
+          fi
+
+      - name: Trigger instance refresh for Admin ASG
+        run: |
+          if [ -n "${{ secrets.ADMIN_ASG_NAME }}" ]; then
+            aws autoscaling start-instance-refresh --auto-scaling-group-name "${{ secrets.ADMIN_ASG_NAME }}"
+          else
+            echo "ADMIN_ASG_NAME secret not set"
+          fi

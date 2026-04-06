@@ -1,0 +1,11 @@
+aws_region            = "us-east-1"
+project_name          = "cloud-native-ecommerce"
+environment           = "prod"
+api_ami_id            = "ami-xxxxxxxxxxxxxxxxx"
+admin_ami_id          = "ami-yyyyyyyyyyyyyyyyy"
+ec2_key_name          = "my-keypair"
+db_username           = "app_user"
+db_password           = "replace_me"
+allowed_ssh_cidr      = "203.0.113.10/32"
+api_desired_capacity  = 2
+admin_desired_capacity = 2
