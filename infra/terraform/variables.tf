@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "project_name" {
   description = "Project/application name used in resource names"
   type        = string
-  default     = "cloud-native-ecommerce"
+  default     = "e-commerce"
 }
 
 variable "environment" {
@@ -25,25 +25,30 @@ variable "vpc_cidr" {
 variable "public_subnet_cidrs" {
   description = "CIDRs for public subnets across AZs"
   type        = list(string)
-  default     = ["10.0.0.0/24", "10.0.1.0/24"]
+  default     = ["10.0.1.0/24", "10.0.2.0/24"]
 }
 
 variable "private_app_subnet_cidrs" {
   description = "CIDRs for private app subnets across AZs"
   type        = list(string)
-  default     = ["10.0.10.0/24", "10.0.11.0/24"]
+  default     = ["10.0.3.0/24", "10.0.4.0/24"]
 }
 
 variable "private_db_subnet_cidrs" {
   description = "CIDRs for private db subnets across AZs"
   type        = list(string)
-  default     = ["10.0.20.0/24", "10.0.21.0/24"]
+  default     = ["10.0.5.0/24", "10.0.6.0/24"]
 }
 
 variable "allowed_ssh_cidr" {
   description = "CIDR block allowed to SSH to EC2 instances"
   type        = string
   default     = "0.0.0.0/0"
+}
+
+variable "acm_certificate_arn" {
+  description = "ACM certificate ARN for ALB HTTPS"
+  type        = string
 }
 
 variable "api_instance_type" {
@@ -61,13 +66,13 @@ variable "admin_instance_type" {
 variable "api_desired_capacity" {
   description = "Desired number of API instances"
   type        = number
-  default     = 2
+  default     = 1
 }
 
 variable "admin_desired_capacity" {
   description = "Desired number of admin backend instances"
   type        = number
-  default     = 2
+  default     = 1
 }
 
 variable "api_ami_id" {
@@ -100,7 +105,7 @@ variable "db_password" {
 variable "db_name" {
   description = "Initial database name"
   type        = string
-  default     = "ecommerce"
+  default     = "EbookTest"
 }
 
 variable "db_instance_class" {

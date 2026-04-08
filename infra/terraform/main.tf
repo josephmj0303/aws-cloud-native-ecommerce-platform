@@ -208,6 +208,7 @@ resource "aws_cloudfront_origin_access_control" "frontend_admin" {
 resource "aws_cloudfront_distribution" "client" {
   enabled             = true
   default_root_object = "index.html"
+  aliases = ["client.joedevopslab.xyz"]
 
   origin {
     domain_name              = aws_s3_bucket.frontend_client.bucket_regional_domain_name
@@ -238,7 +239,9 @@ resource "aws_cloudfront_distribution" "client" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    acm_certificate_arn            = var.acm_certificate_arn
+    ssl_support_method             = "sni-only"
+    minimum_protocol_version       = "TLSv1.2_2021"    
   }
 
   tags = merge(local.common_tags, {
@@ -249,6 +252,7 @@ resource "aws_cloudfront_distribution" "client" {
 resource "aws_cloudfront_distribution" "admin" {
   enabled             = true
   default_root_object = "index.html"
+  aliases = ["admin.joedevopslab.xyz"]
 
   origin {
     domain_name              = aws_s3_bucket.frontend_admin.bucket_regional_domain_name
@@ -279,7 +283,9 @@ resource "aws_cloudfront_distribution" "admin" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    acm_certificate_arn            = var.acm_certificate_arn
+    ssl_support_method             = "sni-only"
+    minimum_protocol_version       = "TLSv1.2_2021"
   }
 
   tags = merge(local.common_tags, {
@@ -450,6 +456,24 @@ resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = 80
   protocol          = "HTTP"
+  
+  default_action {
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+}
+
+resource "aws_lb_listener" "https" {
+  load_balancer_arn = aws_lb.main.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = var.acm_certificate_arn
 
   default_action {
     type             = "forward"
@@ -458,7 +482,7 @@ resource "aws_lb_listener" "http" {
 }
 
 resource "aws_lb_listener_rule" "admin" {
-  listener_arn = aws_lb_listener.http.arn
+  listener_arn = aws_lb_listener.https.arn
   priority     = 100
 
   action {
@@ -487,6 +511,8 @@ resource "aws_launch_template" "api" {
   user_data = base64encode(templatefile("${path.module}/userdata-api.sh.tftpl", {
     db_endpoint = aws_db_instance.main.endpoint
     db_name     = var.db_name
+    db_username = var.db_username
+    db_password = var.db_password
   }))
 
   tag_specifications {
@@ -509,6 +535,8 @@ resource "aws_launch_template" "admin" {
   user_data = base64encode(templatefile("${path.module}/userdata-admin.sh.tftpl", {
     db_endpoint = aws_db_instance.main.endpoint
     db_name     = var.db_name
+    db_username = var.db_username
+    db_password = var.db_password
   }))
 
   tag_specifications {
@@ -521,10 +549,11 @@ resource "aws_launch_template" "admin" {
 }
 
 resource "aws_autoscaling_group" "api" {
-  name                = "${local.name_prefix}-api-asg"
+
+name                = "${local.name_prefix}-api-asg"
   desired_capacity    = var.api_desired_capacity
   min_size            = 1
-  max_size            = 4
+  max_size            = 2
   vpc_zone_identifier = [for s in aws_subnet.private_app : s.id]
   target_group_arns   = [aws_lb_target_group.api.arn]
 
@@ -547,7 +576,7 @@ resource "aws_autoscaling_group" "admin" {
   name                = "${local.name_prefix}-admin-asg"
   desired_capacity    = var.admin_desired_capacity
   min_size            = 1
-  max_size            = 4
+  max_size            = 2
   vpc_zone_identifier = [for s in aws_subnet.private_app : s.id]
   target_group_arns   = [aws_lb_target_group.admin.arn]
 

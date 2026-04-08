@@ -1,8 +1,32 @@
 #!/bin/bash
 set -euxo pipefail
 
-echo "DB_ENDPOINT=${db_endpoint}" >> /etc/environment
-echo "DB_NAME=${db_name}" >> /etc/environment
+yum update -y
 
-# Placeholder startup command
-# Replace with real service bootstrap, e.g. pulling container image and starting API on port 8080.
+# Install Node.js (stable)
+curl -fsSL https://rpm.nodesource.com/setup_18.x | bash -
+yum install -y nodejs git
+
+# Install PM2
+npm install -g pm2
+
+# Clone repo
+git clone https://github.com/josephmj0303/aws-cloud-native-ecommerce-platform.git
+cd aws-cloud-native-ecommerce-platform/ebook-backend-api
+
+npm install
+
+# Wait for DB (important)
+sleep 60
+
+# Start app with PM2
+PORT=8080 \
+DB_HOST=${db_endpoint} \
+DB_NAME=${db_name} \
+DB_USER=${db_username} \
+DB_PASSWORD=${db_password} \
+pm2 start src/server.js --name backend-api
+
+# Persist PM2
+pm2 startup
+pm2 save
