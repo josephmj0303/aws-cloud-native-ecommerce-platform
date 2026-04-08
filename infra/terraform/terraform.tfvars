@@ -1,7 +1,7 @@
 aws_region             = "us-east-1"
 project_name           = "e-commerce"
 environment            = "prod"
-ec2_key_name           = "my-keypair"
+ec2_key_name           = "devops"
 api_ami_id             = "ami-01b14b7ad41e17ba4"
 admin_ami_id           = "ami-01b14b7ad41e17ba4"
 api_desired_capacity   = 1
@@ -28,4 +28,4 @@ db_name             = "EbookTest"
 db_username         = "postgres"
 db_password         = "StrongPassword123"
 
-allowed_ssh_cidr = "157.35.11.230/32"
+allowed_ssh_cidr = "157.35.6.227/32"
