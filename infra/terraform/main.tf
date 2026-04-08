@@ -208,7 +208,7 @@ resource "aws_cloudfront_origin_access_control" "frontend_admin" {
 resource "aws_cloudfront_distribution" "client" {
   enabled             = true
   default_root_object = "index.html"
-  aliases = ["client.joedevopslab.xyz"]
+  aliases             = ["client.joedevopslab.xyz"]
 
   origin {
     domain_name              = aws_s3_bucket.frontend_client.bucket_regional_domain_name
@@ -239,9 +239,9 @@ resource "aws_cloudfront_distribution" "client" {
   }
 
   viewer_certificate {
-    acm_certificate_arn            = var.acm_certificate_arn
-    ssl_support_method             = "sni-only"
-    minimum_protocol_version       = "TLSv1.2_2021"    
+    acm_certificate_arn      = var.acm_certificate_arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
   }
 
   tags = merge(local.common_tags, {
@@ -252,7 +252,7 @@ resource "aws_cloudfront_distribution" "client" {
 resource "aws_cloudfront_distribution" "admin" {
   enabled             = true
   default_root_object = "index.html"
-  aliases = ["admin.joedevopslab.xyz"]
+  aliases             = ["admin.joedevopslab.xyz"]
 
   origin {
     domain_name              = aws_s3_bucket.frontend_admin.bucket_regional_domain_name
@@ -283,9 +283,9 @@ resource "aws_cloudfront_distribution" "admin" {
   }
 
   viewer_certificate {
-    acm_certificate_arn            = var.acm_certificate_arn
-    ssl_support_method             = "sni-only"
-    minimum_protocol_version       = "TLSv1.2_2021"
+    acm_certificate_arn      = var.acm_certificate_arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
   }
 
   tags = merge(local.common_tags, {
@@ -456,7 +456,7 @@ resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = 80
   protocol          = "HTTP"
-  
+
   default_action {
     type = "redirect"
 
@@ -550,7 +550,7 @@ resource "aws_launch_template" "admin" {
 
 resource "aws_autoscaling_group" "api" {
 
-name                = "${local.name_prefix}-api-asg"
+  name                = "${local.name_prefix}-api-asg"
   desired_capacity    = var.api_desired_capacity
   min_size            = 1
   max_size            = 2
