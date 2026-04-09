@@ -57,15 +57,16 @@ app.use((err, req, res, next) => {
 });
 
 // Connect to PostgreSQL database and start the server
-Promise.all([connect()])
-.then(() => {
+connect()
+  .then(() => {
+    console.log("DB connected");
+  })
+  .catch((err) => {
+    console.error("DB failed, continuing anyway:", err.message);
+  })
+  .finally(() => {
     const PORT = process.env.PORT || 8081;
     app.listen(PORT, () => {
-        console.log(`Server is running on port ${PORT}`);
+      console.log(`Server running on port ${PORT}`);
     });
-})
-.catch((error) => {
-    console.error('Failed to start the server due to database connection error:', error);
-});
-
-module.exports = app;
+  });
