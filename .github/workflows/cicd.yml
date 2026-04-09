@@ -110,19 +110,17 @@ jobs:
 
       - name: Build frontend
         run: |
-          if [ -d "frontend/${{ matrix.app }}" ]; then
-            cd frontend/${{ matrix.app }}
-            npm ci
-            npm run build
-          else
-            echo "frontend/${{ matrix.app }} not found; skipping build"
+          if [ "${{ matrix.app }}" = "client" ]; then
+            cd ebook-client-fe
+          elif [ "${{ matrix.app }}" = "admin" ]; then
+            cd ebook-admin-fe
           fi
-
+          
       - name: Upload client artifacts to S3
         if: matrix.app == 'client'
         run: |
           if [ -d "frontend/client/dist" ]; then
-            aws s3 sync frontend/client/dist s3://${{ secrets.S3_BUCKET_CLIENT }} --delete
+            aws s3 sync ebook-client-fe/ s3://${{ secrets.S3_BUCKET_CLIENT }} --delete  
           else
             echo "No dist folder for client; skipping upload"
           fi
@@ -131,7 +129,7 @@ jobs:
         if: matrix.app == 'admin'
         run: |
           if [ -d "frontend/admin/dist" ]; then
-            aws s3 sync frontend/admin/dist s3://${{ secrets.S3_BUCKET_ADMIN }} --delete
+            aws s3 sync ebook-admin-fe/ s3://${{ secrets.S3_BUCKET_ADMIN }} --delete
           else
             echo "No dist folder for admin; skipping upload"
           fi

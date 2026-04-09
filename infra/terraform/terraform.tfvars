@@ -28,4 +28,4 @@ db_name             = "EbookTest"
 db_username         = "postgres"
 db_password         = "StrongPassword123"
 
-allowed_ssh_cidr = "157.35.6.227/32"
+allowed_ssh_cidr = "0.0.0.0/32"
