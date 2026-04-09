@@ -27,6 +27,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Fmt
+        working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform fmt -check -recursive
 
       - name: Terraform Init
@@ -61,7 +62,7 @@ jobs:
 
       - name: Terraform Plan
         working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform plan -input=false -out=tfplan
+        run: terraform plan -input=false
 
   terraform_apply:
     name: Terraform Apply (main)
@@ -98,6 +99,7 @@ jobs:
     strategy:
       matrix:
         app: [client, admin]
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -108,43 +110,44 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Build frontend
+      # ✅ No build needed (already built locally)
+      - name: Prepare frontend
         run: |
           if [ "${{ matrix.app }}" = "client" ]; then
-            cd ebook-client-fe
-          elif [ "${{ matrix.app }}" = "admin" ]; then
-            cd ebook-admin-fe
+            echo "Using ebook-client-fe"
+          else
+            echo "Using ebook-admin-fe"
           fi
-          
-      - name: Upload client artifacts to S3
+
+      # ✅ Upload CLIENT
+      - name: Upload client to S3
         if: matrix.app == 'client'
         run: |
-          if [ -d "frontend/client/dist" ]; then
-            aws s3 sync ebook-client-fe/ s3://${{ secrets.S3_BUCKET_CLIENT }} --delete  
-          else
-            echo "No dist folder for client; skipping upload"
-          fi
+          echo "Uploading client frontend..."
+          aws s3 sync ebook-client-fe/ s3://${{ secrets.S3_BUCKET_CLIENT }} --delete
 
-      - name: Upload admin artifacts to S3
+      # ✅ Upload ADMIN
+      - name: Upload admin to S3
         if: matrix.app == 'admin'
         run: |
-          if [ -d "frontend/admin/dist" ]; then
-            aws s3 sync ebook-admin-fe/ s3://${{ secrets.S3_BUCKET_ADMIN }} --delete
-          else
-            echo "No dist folder for admin; skipping upload"
-          fi
+          echo "Uploading admin frontend..."
+          aws s3 sync ebook-admin-fe/ s3://${{ secrets.S3_BUCKET_ADMIN }} --delete
 
-      - name: Invalidate CloudFront cache
+      # ✅ Invalidate CDN
+      - name: Invalidate CloudFront
         run: |
           if [ "${{ matrix.app }}" = "client" ]; then
             DIST_ID="${{ secrets.CF_DISTRIBUTION_CLIENT_ID }}"
           else
             DIST_ID="${{ secrets.CF_DISTRIBUTION_ADMIN_ID }}"
           fi
+
           if [ -n "$DIST_ID" ]; then
-            aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths "/*"
+            aws cloudfront create-invalidation \
+              --distribution-id "$DIST_ID" \
+              --paths "/*"
           else
-            echo "CloudFront distribution ID not configured for ${{ matrix.app }}"
+            echo "CloudFront distribution ID not set"
           fi
 
   deploy_backend:
@@ -152,6 +155,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: terraform_apply
     runs-on: ubuntu-latest
+
     steps:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
@@ -159,18 +163,16 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Trigger instance refresh for API ASG
+      - name: Refresh API ASG
         run: |
-          if [ -n "${{ secrets.API_ASG_NAME }}" ]; then
-            aws autoscaling start-instance-refresh --auto-scaling-group-name "${{ secrets.API_ASG_NAME }}"
-          else
-            echo "API_ASG_NAME secret not set"
-          fi
+          echo "Refreshing API ASG..."
+          aws autoscaling start-instance-refresh \
+            --auto-scaling-group-name "${{ secrets.API_ASG_NAME }}" \
+            --preferences '{"MinHealthyPercentage": 50, "InstanceWarmup": 120}'
 
-      - name: Trigger instance refresh for Admin ASG
+      - name: Refresh Admin ASG
         run: |
-          if [ -n "${{ secrets.ADMIN_ASG_NAME }}" ]; then
-            aws autoscaling start-instance-refresh --auto-scaling-group-name "${{ secrets.ADMIN_ASG_NAME }}"
-          else
-            echo "ADMIN_ASG_NAME secret not set"
-          fi
+          echo "Refreshing Admin ASG..."
+          aws autoscaling start-instance-refresh \
+            --auto-scaling-group-name "${{ secrets.ADMIN_ASG_NAME }}" \
+            --preferences '{"MinHealthyPercentage": 50, "InstanceWarmup": 120}'
