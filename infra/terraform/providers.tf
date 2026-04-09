@@ -12,3 +12,13 @@ terraform {
 provider "aws" {
   region = var.aws_region
 }
+
+terraform {
+  backend "s3" {
+    bucket         = "joedevops-tf-state"
+    key            = "ecommerce/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "terraform-locks"
+    encrypt        = true
+  }
+}
