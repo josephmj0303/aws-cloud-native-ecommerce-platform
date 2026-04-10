@@ -161,15 +161,15 @@ jobs:
 
       - name: Setup SSH key
         run: |
-          echo "${{ secrets.EC2_SSH_KEY }}" > key.pem
-          chmod 600 key.pem
+          echo "${{ secrets.EC2_SSH_KEY }}" > devops.pem
+          chmod 600 devops.pem
 
       - name: Deploy to EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
 
           set -e
-  
+
           echo "🚀 Starting deployment..."
 
         # Install dependencies if not installed
