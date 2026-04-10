@@ -161,62 +161,22 @@ jobs:
 
       - name: Setup SSH key
         run: |
-          echo "${{ secrets.EC2_SSH_KEY }}" > devops.pem
-          chmod 600 devops.pem
+          echo "${{ secrets.EC2_SSH_KEY }}" > key.pem
+          chmod 600 key.pem
 
-      - name: Deploy to EC2
+      - name: Copy deploy script
         run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          scp -o StrictHostKeyChecking=no -i key.pem scripts/deploy.sh \
+          ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ec2-user/deploy.sh
 
-          set -e
-
-          echo "🚀 Starting deployment..."
-
-        # Install dependencies if not installed
-          if ! command -v node >/dev/null 2>&1; then
-            curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
-            sudo yum install -y nodejs git
-            sudo npm install -g pm2
-          fi
-
-          cd /home/ec2-user
-
-          if [ ! -d "aws-cloud-native-ecommerce-platform" ]; then
-            git clone https://github.com/josephmj0303/aws-cloud-native-ecommerce-platform.git
-          fi
-
-          cd aws-cloud-native-ecommerce-platform
-
-          git pull origin main
-
-         # -------- API --------
-          cd ebook-backend-api
-          npm install
-
-          pm2 delete api || true
-
-          PORT=8080 \
-          DB_HOST=${{ secrets.RDS_ENDPOINT }} \
-          DB_NAME=${{ secrets.DB_NAME }} \
-          DB_USER=${{ secrets.DB_USER }} \
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-          pm2 start src/server.js --name api
-
-         # -------- ADMIN --------
-          cd ../ebook-admin-be
-          npm install
-
-          pm2 delete admin || true
-
-          PORT=8081 \
-          DB_HOST=${{ secrets.RDS_ENDPOINT }} \
-          DB_NAME=${{ secrets.DB_NAME }} \
-          DB_USER=${{ secrets.DB_USER }} \
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-          pm2 start app.js --name admin
-
-          pm2 save
-
-          echo "✅ Deployment completed"
-
-          EOF
+      - name: Execute deploy script
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem \
+          ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
+            chmod +x /home/ec2-user/deploy.sh &&
+            DB_HOST='${{ secrets.RDS_ENDPOINT }}' \
+            DB_NAME='${{ secrets.DB_NAME }}' \
+            DB_USER='${{ secrets.DB_USER }}' \
+            DB_PASSWORD='${{ secrets.DB_PASSWORD }}' \
+            /home/ec2-user/deploy.sh
+          "
