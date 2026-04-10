@@ -415,41 +415,55 @@ resource "aws_lb" "main" {
 }
 
 resource "aws_lb_target_group" "api" {
-  name        = "${substr(local.name_prefix, 0, 18)}-api-tg"
-  port        = 8080
-  protocol    = "HTTP"
-  target_type = "instance"
-  vpc_id      = aws_vpc.main.id
+  name     = "${local.name_prefix}-api-tg"
+  port     = 8080
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.main.id
 
   health_check {
-    path                = "/health"
-    healthy_threshold   = 2
-    unhealthy_threshold = 3
+    path                = "/"
     interval            = 30
     timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
     matcher             = "200-399"
   }
 
-  tags = local.common_tags
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-api-tg"
+  })
+}
+
+resource "aws_lb_target_group_attachment" "api" {
+  target_group_arn = aws_lb_target_group.api.arn
+  target_id        = aws_instance.backend.id
+  port             = 8080
 }
 
 resource "aws_lb_target_group" "admin" {
-  name        = "${substr(local.name_prefix, 0, 16)}-admin-tg"
-  port        = 8081
-  protocol    = "HTTP"
-  target_type = "instance"
-  vpc_id      = aws_vpc.main.id
+  name     = "${local.name_prefix}-admin-tg"
+  port     = 8081
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.main.id
 
   health_check {
-    path                = "/health"
-    healthy_threshold   = 2
-    unhealthy_threshold = 3
+    path                = "/"
     interval            = 30
     timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
     matcher             = "200-399"
   }
 
-  tags = local.common_tags
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-admin-tg"
+  })
+}
+
+resource "aws_lb_target_group_attachment" "admin" {
+  target_group_arn = aws_lb_target_group.admin.arn
+  target_id        = aws_instance.backend.id
+  port             = 8081
 }
 
 resource "aws_lb_listener" "http" {
@@ -498,101 +512,22 @@ resource "aws_lb_listener_rule" "admin" {
 }
 
 # ----------------------
-# EC2 Launch Templates + ASGs
+# EC2 Backend
 # ----------------------
-resource "aws_launch_template" "api" {
-  name_prefix   = "${local.name_prefix}-api-"
-  image_id      = var.api_ami_id
-  instance_type = var.api_instance_type
+resource "aws_instance" "backend" {
+  ami           = var.api_ami_id
+  instance_type = "t3.micro"
   key_name      = var.ec2_key_name
+
+  subnet_id = aws_subnet.public[0].id
 
   vpc_security_group_ids = [aws_security_group.ec2_backend.id]
 
-  user_data = base64encode(templatefile("${path.module}/userdata-api.sh.tftpl", {
-    db_endpoint = aws_db_instance.main.endpoint
-    db_name     = var.db_name
-    db_username = var.db_username
-    db_password = var.db_password
-  }))
+  associate_public_ip_address = true
 
-  tag_specifications {
-    resource_type = "instance"
-    tags = merge(local.common_tags, {
-      Name = "${local.name_prefix}-api"
-      Role = "api"
-    })
-  }
-}
-
-resource "aws_launch_template" "admin" {
-  name_prefix   = "${local.name_prefix}-admin-"
-  image_id      = var.admin_ami_id
-  instance_type = var.admin_instance_type
-  key_name      = var.ec2_key_name
-
-  vpc_security_group_ids = [aws_security_group.ec2_backend.id]
-
-  user_data = base64encode(templatefile("${path.module}/userdata-admin.sh.tftpl", {
-    db_endpoint = aws_db_instance.main.endpoint
-    db_name     = var.db_name
-    db_username = var.db_username
-    db_password = var.db_password
-  }))
-
-  tag_specifications {
-    resource_type = "instance"
-    tags = merge(local.common_tags, {
-      Name = "${local.name_prefix}-admin"
-      Role = "admin"
-    })
-  }
-}
-
-resource "aws_autoscaling_group" "api" {
-
-  name                = "${local.name_prefix}-api-asg"
-  desired_capacity    = var.api_desired_capacity
-  min_size            = 1
-  max_size            = 2
-  vpc_zone_identifier = [for s in aws_subnet.private_app : s.id]
-  target_group_arns   = [aws_lb_target_group.api.arn]
-
-  launch_template {
-    id      = aws_launch_template.api.id
-    version = "$Latest"
-  }
-
-  health_check_type         = "ELB"
-  health_check_grace_period = 180
-
-  tag {
-    key                 = "Name"
-    value               = "${local.name_prefix}-api"
-    propagate_at_launch = true
-  }
-}
-
-resource "aws_autoscaling_group" "admin" {
-  name                = "${local.name_prefix}-admin-asg"
-  desired_capacity    = var.admin_desired_capacity
-  min_size            = 1
-  max_size            = 2
-  vpc_zone_identifier = [for s in aws_subnet.private_app : s.id]
-  target_group_arns   = [aws_lb_target_group.admin.arn]
-
-  launch_template {
-    id      = aws_launch_template.admin.id
-    version = "$Latest"
-  }
-
-  health_check_type         = "ELB"
-  health_check_grace_period = 180
-
-  tag {
-    key                 = "Name"
-    value               = "${local.name_prefix}-admin"
-    propagate_at_launch = true
-  }
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-backend-single"
+  })
 }
 
 # ----------------------

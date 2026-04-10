@@ -151,28 +151,72 @@ jobs:
           fi
 
   deploy_backend:
-    name: Deploy Backend Services
+    name: Deploy Backend to EC2
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: terraform_apply
     runs-on: ubuntu-latest
 
     steps:
-      - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ env.AWS_REGION }}
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Refresh API ASG
+      - name: Setup SSH key
         run: |
-          echo "Refreshing API ASG..."
-          aws autoscaling start-instance-refresh \
-            --auto-scaling-group-name "${{ secrets.API_ASG_NAME }}" \
-            --preferences '{"MinHealthyPercentage": 50, "InstanceWarmup": 120}'
+          echo "${{ secrets.EC2_SSH_KEY }}" > key.pem
+          chmod 600 key.pem
 
-      - name: Refresh Admin ASG
+      - name: Deploy to EC2
         run: |
-          echo "Refreshing Admin ASG..."
-          aws autoscaling start-instance-refresh \
-            --auto-scaling-group-name "${{ secrets.ADMIN_ASG_NAME }}" \
-            --preferences '{"MinHealthyPercentage": 50, "InstanceWarmup": 120}'
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+
+          set -e
+  
+          echo "🚀 Starting deployment..."
+
+        # Install dependencies if not installed
+        if ! command -v node >/dev/null 2>&1; then
+          curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+          sudo yum install -y nodejs git
+          sudo npm install -g pm2
+        fi
+
+        cd /home/ec2-user
+
+        if [ ! -d "aws-cloud-native-ecommerce-platform" ]; then
+          git clone https://github.com/josephmj0303/aws-cloud-native-ecommerce-platform.git
+        fi
+
+        cd aws-cloud-native-ecommerce-platform
+
+        git pull origin main
+
+        # -------- API --------
+        cd ebook-backend-api
+        npm install
+
+        pm2 delete api || true
+
+        PORT=8080 \
+        DB_HOST=${{ secrets.RDS_ENDPOINT }} \
+        DB_NAME=${{ secrets.DB_NAME }} \
+        DB_USER=${{ secrets.DB_USER }} \
+        DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+        pm2 start src/server.js --name api
+
+        # -------- ADMIN --------
+        cd ../ebook-admin-be
+        npm install
+
+        pm2 delete admin || true
+
+        PORT=8081 \
+        DB_HOST=${{ secrets.RDS_ENDPOINT }} \
+        DB_NAME=${{ secrets.DB_NAME }} \
+        DB_USER=${{ secrets.DB_USER }} \
+        DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+        pm2 start app.js --name admin
+
+        pm2 save
+
+        echo "✅ Deployment completed"
+
+        EOF

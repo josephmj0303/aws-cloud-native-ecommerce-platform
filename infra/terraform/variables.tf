@@ -57,31 +57,8 @@ variable "api_instance_type" {
   default     = "t3.micro"
 }
 
-variable "admin_instance_type" {
-  description = "Instance type for admin backend ASG"
-  type        = string
-  default     = "t3.micro"
-}
-
-variable "api_desired_capacity" {
-  description = "Desired number of API instances"
-  type        = number
-  default     = 1
-}
-
-variable "admin_desired_capacity" {
-  description = "Desired number of admin backend instances"
-  type        = number
-  default     = 1
-}
-
 variable "api_ami_id" {
   description = "AMI for API backend instances"
-  type        = string
-}
-
-variable "admin_ami_id" {
-  description = "AMI for admin backend instances"
   type        = string
 }
 
