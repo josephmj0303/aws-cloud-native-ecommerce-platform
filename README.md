@@ -131,6 +131,18 @@ Restart apps (PM2)
 
 ---
 
+## 🔐 Secrets Management
+
+- Sensitive values (DB credentials, API keys) are stored in **GitHub Actions Secrets** for this portfolio project.
+- No secrets are hardcoded in the repository.
+- In production environments, secrets would be managed using dedicated secret management solutions such as:
+  - AWS Systems Manager Parameter Store
+  - AWS Secrets Manager
+  - Vault (HashiCorp)
+
+> ⚠️ Note: This project uses GitHub Secrets for demonstration purposes only.
+
+---
 
 ## ⚙️ Key Features
 
