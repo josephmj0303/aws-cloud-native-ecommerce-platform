@@ -49,10 +49,15 @@ A production-style, cloud-native e-commerce platform deployed on AWS using moder
 ├── ebook-admin-fe/
 ├── ebook-backend-api/
 ├── ebook-admin-be/
+├── .gitignore
+├── LICENSE
 ├── infra/terraform/
 ├── .github/workflows/
-└── docs/screenshots/
-
+├── scripts/
+└── docs
+    ├── architecture/
+    └── screenshots/
+ 
 ```
 
 ---
