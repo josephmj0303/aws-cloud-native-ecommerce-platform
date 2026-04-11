@@ -177,10 +177,6 @@ This project demonstrates:
 
 DevOps Portfolio Project
 
-Designed to demonstrate real-world DevOps practices for deploying cloud-native e-commerce application.
-
----
-
 #### ⭐ Final Note
 
 This project reflects real-world DevOps practices, including troubleshooting complex deployment issues, implementing reliable CI/CD pipelines, and delivering a fully functional cloud-native application.
