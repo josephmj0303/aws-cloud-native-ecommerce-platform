@@ -22,13 +22,13 @@ A production-style, cloud-native e-commerce platform deployed on AWS using moder
 
 ---
 
-# 🏗️ Architecture Overview
+## 🏗️ Architecture Overview
 
 ![Architecture_diagram](docs/architecture/architecture-diagram.png)
 
 ---
 
-# ☁️ AWS Services Breakdown
+## ☁️ AWS Services Breakdown
 
 | Service              | Purpose                                |
 | -------------------- | -------------------------------------- |
@@ -41,7 +41,7 @@ A production-style, cloud-native e-commerce platform deployed on AWS using moder
 | **IAM**              | Access control                         |
 
 ---
-# 📁 Repository Structure
+## 📁 Repository Structure
 
 ```
 .
@@ -62,7 +62,7 @@ A production-style, cloud-native e-commerce platform deployed on AWS using moder
 
 ---
 
-# 🚀 CI/CD Pipeline
+## 🚀 CI/CD Pipeline
 
 ### GitHub Actions Workflow
 
@@ -86,7 +86,7 @@ Restart apps (PM2)
 
 ---
 
-# 🖥️ Backend Runtime
+## 🖥️ Backend Runtime
 
 * Node.js (Express)
 * Managed using **PM2**
@@ -95,7 +95,7 @@ Restart apps (PM2)
 
 ---
 
-# 🗄️ Database
+## 🗄️ Database
 
 * PostgreSQL (AWS RDS)
 * Data restored via `pg_restore`
@@ -103,17 +103,17 @@ Restart apps (PM2)
 
 ---
 
-📸 Application Preview
+## 📸 Application Preview
 
-🛍️ Customer Experience
+### 🛍️ Customer Experience
 
 ![Homepage](docs/screenshots/homepage.png)
 
-🧑‍💼 Admin Dashboard
+### 🧑‍💼 Admin Dashboard
 
 ![Admin](docs/screenshots/admin.png)
 
-🔎 API Documentation
+### 🔎 API Documentation
 
 ![Swagger](docs/screenshots/swagger.png)
 
@@ -132,7 +132,7 @@ Restart apps (PM2)
 ---
 
 
-# ⚙️ Key Features
+## ⚙️ Key Features
 
 * ✅ Cloud-native architecture
 * ✅ CI/CD automation
@@ -143,7 +143,7 @@ Restart apps (PM2)
 
 ---
 
-# 🧠 DevOps Highlights
+## 🧠 DevOps Highlights
 
 * Infrastructure design (VPC, ALB, RDS)
 * CI/CD automation
@@ -153,7 +153,7 @@ Restart apps (PM2)
 
 ---
 
-# 🏆 Outcome
+## 🏆 Outcome
 
 This project demonstrates:
 
@@ -164,7 +164,7 @@ This project demonstrates:
 
 ---
 
-# 🔮 Future Enhancements
+## 🔮 Future Enhancements
 
 * 🔁 Auto Scaling Group (ASG)
 * 🔐 HTTPS enforcement (ACM on ALB)
@@ -173,14 +173,15 @@ This project demonstrates:
 
 ---
 
-# 👨‍💻 Author
+## 👨‍💻 Author
 
-**Joe**
-DevOps Engineer
+DevOps Portfolio Project
+
+Designed to demonstrate real-world DevOps practices for deploying cloud-native e-commerce application.
 
 ---
 
-⭐ Final Note
+#### ⭐ Final Note
 
 This project reflects real-world DevOps practices, including troubleshooting complex deployment issues, implementing reliable CI/CD pipelines, and delivering a fully functional cloud-native application.
 
