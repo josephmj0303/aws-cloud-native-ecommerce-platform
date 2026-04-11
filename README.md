@@ -104,13 +104,17 @@ Restart apps (PM2)
 ---
 
 📸 Application Preview
+
 🛍️ Customer Experience
+
 ![Homepage](docs/screenshots/homepage.png)
 
 🧑‍💼 Admin Dashboard
+
 ![Admin](docs/screenshots/admin.png)
 
 🔎 API Documentation
+
 ![Swagger](docs/screenshots/swagger.png)
 
 ---
