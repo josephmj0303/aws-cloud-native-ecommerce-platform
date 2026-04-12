@@ -165,14 +165,31 @@ Restart apps (PM2)
 
 ---
 
+## 🔒 Source Code Notice
+
+This repository intentionally excludes application source code.
+- To simulate real-world enterprise practices
+- To protect application-level intellectual property
+- To focus this project on DevOps engineering capabilities
+
+The repository still includes:
+- Full CI/CD pipelines
+- Infrastructure as Code (Terraform)
+- Architecture & Proof of Concept Documents
+- Deployment scripts
+
+📩 Source code can be shared upon request.
+
+---
+
 ## 🏆 Outcome
 
 This project demonstrates:
 
-✔ End-to-end cloud deployment
-✔ CI/CD pipeline design
-✔ Real-world troubleshooting
-✔ Production-style architecture
+- ✔ End-to-end cloud deployment
+- ✔ CI/CD pipeline design
+- ✔ Real-world troubleshooting
+- ✔ Production-style architecture
 
 ---
 
