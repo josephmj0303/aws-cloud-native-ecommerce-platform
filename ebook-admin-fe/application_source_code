@@ -1,0 +1,15 @@
+## Application Source Code (Private)
+
+The application source code has been moved to a private repository 
+to reflect real-world security practices.
+
+This project focuses on:
+
+- Infrastructure provisioning (Terraform)
+- CI/CD pipelines (GitHub Actions)
+- CDN-backed frontend delivery
+- Domain-based routing
+- Production-style backend deployment
+
+
+If required, access can be provided upon request.
