@@ -118,7 +118,7 @@ jobs:
           else
             echo "Using ebook-admin-fe"
           fi
-
+      # correct frontend artifact path for S3 upload
       # ✅ Upload CLIENT
       - name: Upload client to S3
         if: matrix.app == 'client'
