@@ -46,3 +46,4 @@ pm2 start app.js --name admin
 pm2 save
 
 echo "✅ Deployment completed"
+# replace ASG deployment with single EC2
