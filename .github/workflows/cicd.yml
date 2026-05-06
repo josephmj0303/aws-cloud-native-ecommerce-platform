@@ -126,6 +126,7 @@ jobs:
           echo "Uploading client frontend..."
           aws s3 sync ebook-client-fe/ s3://${{ secrets.S3_BUCKET_CLIENT }} --delete
 
+      # add missing GitHub secrets for S3   
       # ✅ Upload ADMIN
       - name: Upload admin to S3
         if: matrix.app == 'admin'
