@@ -164,7 +164,7 @@ jobs:
         run: |
           echo "${{ secrets.EC2_SSH_KEY }}" > key.pem
           chmod 600 key.pem
-
+      # Add deployment script
       - name: Copy deploy script
         run: |
           scp -o StrictHostKeyChecking=no -i key.pem scripts/deploy.sh \
