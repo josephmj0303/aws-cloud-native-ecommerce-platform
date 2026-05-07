@@ -4,6 +4,7 @@ set -e
 echo "🚀 Starting deployment..."
 
 # Install Node if missing
+# enforce Node.js v18 for backend compatibility
 if ! command -v node >/dev/null 2>&1; then
   curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
   sudo yum install -y nodejs git
