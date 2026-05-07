@@ -181,3 +181,4 @@ jobs:
             DB_PASSWORD='${{ secrets.DB_PASSWORD }}' \
             /home/ec2-user/deploy.sh
           "
+# migrate environment variables to GitHub Secrets
