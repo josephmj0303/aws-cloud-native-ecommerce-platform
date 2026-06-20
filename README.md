@@ -9,6 +9,7 @@
   <img src="https://img.shields.io/badge/CloudFront-CDN-blueviolet" />
 </p>
 A production-style, cloud-native e-commerce platform deployed on AWS using modern DevOps practices. This project demonstrates end-to-end infrastructure provisioning, CI/CD automation, and scalable application deployment.
+
 ---
 
 ## ⚡Quick Summary
